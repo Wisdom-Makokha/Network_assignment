@@ -38,7 +38,7 @@ struct book_entry
 
 void getline(char *string);
 void addItemToCatalog(struct book_entry *entry);
-void printCatalogToFile(struct book_entry *start_here, FILE *file_ptr, int entries);
+void printCatalogToFile(struct book_entry *start_here, FILE *file_ptr, int *entries);
 void pickFunction(struct book_entry *catalog, int *entries);
 
 int main(void)
@@ -46,6 +46,7 @@ int main(void)
     FILE *file_ptr;
     char filename[] = "book_catalog.txt";
     int entries = 0;
+    int *entry_ptr = &entries;
 
     if (((file_ptr = fopen(filename, "w")) == NULL))
     {
@@ -56,6 +57,7 @@ int main(void)
     struct book_entry catalog[BOOK_LIMIT];
 
     pickFunction(catalog, &entries);
+    printCatalogToFile(catalog, file_ptr, entry_ptr);
 
     fclose(file_ptr);
     exit(EXIT_SUCCESS);
@@ -79,12 +81,14 @@ void pickFunction(struct book_entry *catalog, int *entries)
 
     while (!stop_running)
     {
-        printf("What would you like to do: (pick the number for the function you want to use)\n");
-        printf("  Display catalog: %d\n", DISPLAY_CATALOG);
-        printf("  Search item: %d\n", SEARCH_ITEM);
-        printf("  Add item: %d\n", ADD_ITEM);
-        printf("  Purchase item: %d\n", PURCHASE_ITEM);
-        printf("  Stop: %d\n", STOP);
+        printf("\n\n\nWhat would you like to do: (pick the number for the function you want to use)\n");
+        printf("  Display the catalog: %d\n", DISPLAY_CATALOG);
+        printf("  Search for an item: %d\n", SEARCH_ITEM);
+        printf("  Add an item: %d\n", ADD_ITEM);
+        printf("  Purchase an item: %d\n", PURCHASE_ITEM);
+        printf("  Stop: %d\n\n", STOP);
+
+        printf("Response: ");
 
         scanf("%d", &response);
         switch (response)
@@ -94,8 +98,10 @@ void pickFunction(struct book_entry *catalog, int *entries)
         case SEARCH_ITEM:
             break;
         case ADD_ITEM:
+            printf("%d\n", *entries);
             addItemToCatalog(catalog + *entries);
-            *entries++;
+            printf("%d\n", (catalog + *entries) - catalog);
+            *entries = *entries + 1;
             break;
         case PURCHASE_ITEM:
             break;
@@ -108,14 +114,12 @@ void pickFunction(struct book_entry *catalog, int *entries)
     }
 }
 
-void printCatalogToFile(struct book_entry *start_here, FILE *file_ptr, int entries)
+void printCatalogToFile(struct book_entry *start_here, FILE *file_ptr, int *entries)
 {
-    int index = 1;
-
-    char serial_format[] = "%-5d";
+    char serial_format[] = "%-6d";
     char title_format[] = "%-32s";
     char author_format[] = "%-32s";
-    char isbn_format[] = "%-12s";
+    char isbn_format[] = "%-15s";
     char publisher_format[] = "%-24s";
     char date_format[] = "%d/%d/%d\n";
 
@@ -126,37 +130,42 @@ void printCatalogToFile(struct book_entry *start_here, FILE *file_ptr, int entri
     fprintf(file_ptr, publisher_format, "Publisher");
     fprintf(file_ptr, "%-21s\n", "Date of publication");
 
-    // fprintf(file_ptr, serial_format, index);
-    // fprintf(file_ptr, title_format, start_here->title);
-    // fprintf(file_ptr, author_format, start_here->authors);
-    // fprintf(file_ptr, isbn_format, start_here->isbn_no);
-    // fprintf(file_ptr, publisher_format, start_here->publisher);
-    // fprintf(file_ptr, date_format, start_here->date_of_publication.day, start_here->date_of_publication.month, start_here->date_of_publication.year);
+    for (int index = 0; index < *entries; index++, start_here++)
+    {
+        fprintf(file_ptr, serial_format, index + 1);
+        fprintf(file_ptr, title_format, start_here->title);
+        fprintf(file_ptr, author_format, start_here->authors);
+        fprintf(file_ptr, isbn_format, start_here->isbn_no);
+        fprintf(file_ptr, publisher_format, start_here->publisher);
+        fprintf(
+            file_ptr,
+            date_format, 
+            start_here->date_of_publication.day, 
+            start_here->date_of_publication.month, 
+            start_here->date_of_publication.year);
+    }
 }
 
 void addItemToCatalog(struct book_entry *entry)
 {
     char empty[] = "";
-    printf("Enter book details: \n");
+    printf("Press <enter> to continue...\n");
+    // getline(empty);
 
+    printf("Enter book details: \n");
     printf("  Book title: ");
-    getline(empty);
     getline(entry->title);
 
     printf("  Author: ");
-    // getline(empty);
     getline(entry->authors);
 
     printf("  ISBN: ");
-    // getline(empty);
     getline(entry->isbn_no);
 
     printf("  Publisher: ");
-    // getline(empty);
     getline(entry->publisher);
 
     printf("  Date of publication: ");
-    // getline(empty);
     scanf("%d/%d/%d",
           &entry->date_of_publication.day,
           &entry->date_of_publication.month,
@@ -167,6 +176,9 @@ void getline(char *string)
 {
     char ch;
     int index = 0;
+    
+    char newline;
+    scanf("%[\n]", &newline);
 
     while ((ch = getchar()) != '\n')
     {
