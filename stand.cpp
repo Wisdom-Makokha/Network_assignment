@@ -28,7 +28,7 @@ struct date
 
 struct book_entry
 {
-    int serial_no;
+    // int serial_no;
     char title[TITLE_LIMIT];
     char authors[AUTHOR_LIMIT];
     char isbn_no[ISBN_LIMIT];
@@ -36,11 +36,10 @@ struct book_entry
     struct date date_of_publication;
 };
 
-void getline(char *string, FILE* input);
+void getline(char *string);
 void addItemToCatalog(struct book_entry *entry);
 void printCatalogToFile(struct book_entry *start_here, FILE *file_ptr, int *entries);
 void pickFunction(struct book_entry *catalog, int *entries);
-void displayCatalog();
 
 int main(void)
 {
@@ -49,7 +48,7 @@ int main(void)
     int entries = 0;
     int *entry_ptr = &entries;
 
-    if (((file_ptr = fopen(filename, "a")) == NULL))
+    if (((file_ptr = fopen(filename, "a")) == NULL)) 
     {
         printf("Could not open file\n");
         exit(EXIT_FAILURE);
@@ -95,7 +94,6 @@ void pickFunction(struct book_entry *catalog, int *entries)
         switch (response)
         {
         case DISPLAY_CATALOG:
-            displayCatalog();
             break;
         case SEARCH_ITEM:
             break;
@@ -116,31 +114,6 @@ void pickFunction(struct book_entry *catalog, int *entries)
     }
 }
 
-void displayCatalog()
-{
-    FILE *file = fopen("read_file.txt", "r");
-    if (file == NULL)
-    {
-        printf("Error opening file!\n");
-        return;
-    }
-
-    struct book_entry book;
-
-    while(feof(file))
-    {
-        
-    }
-
-
-    printf("S/No\tTitle\t\t\t\tAuthors\t\t\tISBN\t\tPublisher\t\tDate of publication\n");
-    while (fscanf(file,  "%d %s %s %s %s %s", &book.serial_no, book.title, book.authors, book.isbn_no, book.publisher, book.date_of_publication) != EOF)
-    {
-        printf("%d\t%s\t\t\t%s\t\t\t%s\t\t%s\t\t%s\n", book.serial_no, book.title, book.authors, book.isbn_no, book.publisher, book.date_of_publication);
-    }
-    fclose(file);
-}
-
 void printCatalogToFile(struct book_entry *start_here, FILE *file_ptr, int *entries)
 {
     char serial_format[] = "%-6d";
@@ -150,12 +123,12 @@ void printCatalogToFile(struct book_entry *start_here, FILE *file_ptr, int *entr
     char publisher_format[] = "%-24s";
     char date_format[] = "%d/%d/%d\n";
 
-    // fprintf(file_ptr, "%-6s", "S/No");
-    // fprintf(file_ptr, title_format, "Title");
-    // fprintf(file_ptr, author_format, "Author");
-    // fprintf(file_ptr, isbn_format, "ISBN");
-    // fprintf(file_ptr, publisher_format, "Publisher");
-    // fprintf(file_ptr, "%-21s\n", "Date of publication");
+    fprintf(file_ptr, "%-6s", "S/No");
+    fprintf(file_ptr, title_format, "Title");
+    fprintf(file_ptr, author_format, "Author");
+    fprintf(file_ptr, isbn_format, "ISBN");
+    fprintf(file_ptr, publisher_format, "Publisher");
+    fprintf(file_ptr, "%-21s\n", "Date of publication");
 
     for (int index = 0; index < *entries; index++, start_here++)
     {
@@ -180,16 +153,16 @@ void addItemToCatalog(struct book_entry *entry)
 
     printf("Enter book details: \n");
     printf("  Book title: ");
-    getline(entry->title, stdin);
+    getline(entry->title);
 
     printf("  Author: ");
-    getline(entry->authors, stdin);
+    getline(entry->authors);
 
     printf("  ISBN: ");
-    getline(entry->isbn_no, stdin);
+    getline(entry->isbn_no);
 
     printf("  Publisher: ");
-    getline(entry->publisher, stdin);
+    getline(entry->publisher);
 
     printf("  Date of publication: ");
     scanf("%d/%d/%d",
@@ -198,13 +171,13 @@ void addItemToCatalog(struct book_entry *entry)
           &entry->date_of_publication.year);
 }
 
-void getline(char *string, FILE* input)
+void getline(char *string)
 {
     char ch;
     int index = 0;
     
     char newline;
-    fscanf(input, "%[\n]", &newline);
+    scanf("%[\n]", &newline);
 
     while ((ch = getchar()) != '\n')
     {
