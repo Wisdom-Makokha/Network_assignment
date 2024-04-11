@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdbool.h>
+#include <string.h>
 
 #define TITLE_LIMIT 256
 #define AUTHOR_LIMIT 256
@@ -9,6 +10,7 @@
 #define BOOK_LIMIT 1024
 #define READ_ONLY "read_file.txt"
 #define DISPLAY_FILE "book_catalog.txt"
+#define NULL_ENTRY (struct book_entry *) 0
 
 // program to do the following
 // display catalog
@@ -16,10 +18,6 @@
 // purchase item
 // add item
 // pay for item
-
-// S/No    Title                   Authors         ISBN          Publisher       Date of publication
-// 1       Network programming     xxxxxxx        xxxxxx        xxxxxxxxx       xxxxxxxxxxxxxx
-// 2
 
 struct date
 {
@@ -47,6 +45,7 @@ int printCatalogToFile(struct book_entry *start_here, FILE *file_ptr, int *entri
 void printEntry(struct book_entry *entry, FILE *file_ptr);
 void setupOutput(FILE *file_ptr);
 void displayCatalog(FILE *file_ptr, struct book_entry *catalog, int *entries);
+struct book_entry * search_item(struct book_entry *catalog, char *isbn, int *entries);
 
 int main(void)
 {
@@ -55,18 +54,15 @@ int main(void)
 
     struct book_entry catalog[BOOK_LIMIT];
 
-    FILE *file_ptr;
-    if((file_ptr = fopen(DISPLAY_FILE, "w")) == NULL)
-    {
-        printf("Could not open file %s\n", DISPLAY_FILE);
-        exit(EXIT_FAILURE);
-    }
+    FILE *file_ptr = stdout;
+    // if((file_ptr = fopen(DISPLAY_FILE, "w")) == NULL)
+    // {
+    //     printf("Could not open file %s\n", DISPLAY_FILE);
+    //     exit(EXIT_FAILURE);
+    // }
 
     if (!readFileContents(catalog, entry_ptr))
-    {
         pickFunction(catalog, &entries);
-        displayCatalog(file_ptr, catalog, entry_ptr);
-    }
 
     exit(EXIT_SUCCESS);
 }
@@ -85,10 +81,12 @@ void pickFunction(struct book_entry *catalog, int *entries)
 
     bool stop_running = false;
     int response;
+    char unavailable[] = "Function unavailable for now!!\n";
+    struct book_entry * found_entry;
 
     while (!stop_running)
     {
-        printf("\n\n\nWhat would you like to do: (pick the number for the function you want to use)\n");
+        printf("\nWhat would you like to do: (pick the number for the function you want to use)\n");
         printf("  Display the catalog: %d\n", DISPLAY_CATALOG);
         printf("  Search for an item: %d\n", SEARCH_ITEM);
         printf("  Add an item: %d\n", ADD_ITEM);
@@ -104,6 +102,15 @@ void pickFunction(struct book_entry *catalog, int *entries)
             displayCatalog(stdout, catalog, entries);
             break;
         case SEARCH_ITEM:
+            char isbn_number[ISBN_LIMIT];
+            
+            printf("Enter the isbn number for your book: ");
+            getline(isbn_number, stdin);
+            
+            if((found_entry = search_item(catalog, isbn_number, entries)) == NULL_ENTRY)
+                printf("No such book in catalog\n");
+            else
+                printEntry(found_entry, stdout);
             break;
         case ADD_ITEM:
             printf("%d\n", *entries);
@@ -112,6 +119,7 @@ void pickFunction(struct book_entry *catalog, int *entries)
             *entries = *entries + 1;
             break;
         case PURCHASE_ITEM:
+            printf(unavailable);
             break;
         case STOP:
             stop_running = true;
@@ -119,21 +127,35 @@ void pickFunction(struct book_entry *catalog, int *entries)
         default:
             break;
         }
+
+        // char empty[] = "";
+        // printf("\n\n!!Press <enter> to continue!!\n");
+        // getline(empty, stdin);
+        // printf("\n\n");
     }
+}
+
+struct book_entry * search_item(struct book_entry *catalog, char *isbn, int *entries)
+{
+    for(int index = 0; index < *entries; index++, catalog++)
+    {
+        if((strcmp(isbn, catalog->isbn_no)) == 0)
+            return catalog;
+    }
+
+    return NULL_ENTRY;
 }
 
 int readFileContents(struct book_entry *catalog, int *entries)
 {
-    char filename[] = "read_file.txt";
-
     FILE *read_fileptr;
-    if ((read_fileptr = fopen(filename, "r")) == NULL)
+    if ((read_fileptr = fopen(READ_ONLY, "r")) == NULL)
     {
-        printf("Could not opern file %s\n", filename);
+        printf("Could not opern file %s\n", READ_ONLY);
         return -1;
     }
 
-    if(feof(read_fileptr))
+    if (feof(read_fileptr))
     {
         printf("File empty\n");
         return 0;
@@ -144,19 +166,19 @@ int readFileContents(struct book_entry *catalog, int *entries)
         // printf("Read line\n");
         fscanf(read_fileptr, "%d", &catalog->serial_no);
         // printf("%d\n", catalog->serial_no);
-        
+
         getline(catalog->title, read_fileptr);
         // printf("%s\n", catalog->title);
-        
+
         getline(catalog->authors, read_fileptr);
         // printf("%s\n", catalog->authors);
-        
+
         getline(catalog->isbn_no, read_fileptr);
         // printf("%s\n", catalog->isbn_no);
-        
+
         getline(catalog->publisher, read_fileptr);
         // printf("%s\n", catalog->publisher);
-        
+
         fscanf(
             read_fileptr,
             "%d/%d/%d",
@@ -165,10 +187,9 @@ int readFileContents(struct book_entry *catalog, int *entries)
             &catalog->date_of_publication.year);
         // printf("%d/%d/%d\n", catalog->date_of_publication.day, catalog->date_of_publication.month, catalog->date_of_publication.year);
 
-
         catalog++;
         *entries = *entries + 1;
-    }while (!feof(read_fileptr));
+    } while (!feof(read_fileptr));
 
     fclose(read_fileptr);
     return 0;
@@ -199,12 +220,12 @@ void setupOutput(FILE *file_ptr)
 
 int printCatalogToFile(struct book_entry *start_here, FILE *file_ptr, int *entries)
 {
-    if(*entries == 0)
+    if (*entries == 0)
     {
         printf("No entries in catalog");
         return 0;
     }
-    
+
     for (int index = 0; index < *entries; index++)
         printEntry(start_here + index, file_ptr);
 
@@ -214,12 +235,9 @@ int printCatalogToFile(struct book_entry *start_here, FILE *file_ptr, int *entri
 int addItemToCatalog(struct book_entry *entry, int *entries)
 {
     FILE *file_ptr;
-
-    char filename[] = "book_catalog.txt";
-
-    if (((file_ptr = fopen(filename, "a")) == NULL))
+    if (((file_ptr = fopen(DISPLAY_FILE, "a")) == NULL))
     {
-        printf("Could not open file\n");
+        printf("Could not open file%s\n", DISPLAY_FILE);
         return -1;
     }
 
@@ -275,11 +293,10 @@ void printEntry(struct book_entry *entry, FILE *file_ptr)
 int addToReadFile(struct book_entry *entry)
 {
     FILE *file_ptr;
-    char filename[] = "read_file.txt";
 
-    if (((file_ptr = fopen(filename, "a")) == NULL))
+    if (((file_ptr = fopen(READ_ONLY, "a")) == NULL))
     {
-        printf("Could not open file\n");
+        printf("Could not open file%s\n", READ_ONLY);
         return -1;
     }
 
@@ -288,7 +305,7 @@ int addToReadFile(struct book_entry *entry)
     char author_format[] = "%s\n";
     char isbn_format[] = "%s\n";
     char publisher_format[] = "%s\n";
-    char date_format[] = "%d/%d/%d\n\n";
+    char date_format[] = "%d/%d/%d";
 
     fprintf(file_ptr, serial_format, entry->serial_no);
     fprintf(file_ptr, title_format, entry->title);
