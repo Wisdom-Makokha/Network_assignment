@@ -6,16 +6,16 @@
 
 using namespace std;
 
-int main() 
+int main()
 {
-    //Initialize WSA variables
+    // Initialize WSA variables
     WSADATA wsaData;
     int wsa_error;
     WORD wVersionRequested = MAKEWORD(2, 2);
     wsa_error = WSAStartup(wVersionRequested, &wsaData);
 
-    //Check for initialization success
-    if(wsa_error != 0)
+    // Check for initialization success
+    if (wsa_error != 0)
     {
         cout << "The Winsock dll not found!" << endl;
         return 0;
@@ -32,21 +32,49 @@ int main()
     serverSocket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
 
     // Check for socket creation success
-    if(serverSocket == INVALID_SOCKET)
+    if (serverSocket == INVALID_SOCKET)
     {
-        cout << "Error at socket(): " <<WSAGetLastError() << endl;
+        cout << "Error at socket(): " << WSAGetLastError() << endl;
         WSACleanup();
         return 0;
     }
     else
         cout << "Socket is OK" << endl;
 
-    //Bind the socket
+    // Bind the socket
     sockaddr_in service;
     service.sin_family = AF_INET;
     service.sin_addr.s_addr = inet_addr(IP_ADDRESS);
-    service.sin_port = htons(PORT_NO); //choose a port number
+    service.sin_port = htons(PORT_NO); // choose a port number
 
-    //Use the bind function 
-    if(bind(serverSocket, reinterpret_cast<SOCKADDR*>))
+    // Use the bind function
+    if (bind(serverSocket, reinterpret_cast<SOCKADDR *>(&service), sizeof(service)) == SOCKET_ERROR)
+    {
+        cout << "bind() failed: " << WSAGetLastError() << endl;
+        closesocket(serverSocket);
+        WSACleanup();
+        return 0;
+    }
+    else
+        cout << "bind() is OK!" << endl;
+
+    // Listen for incoming connections
+    if (listen(serverSocket, 1) == SOCKET_ERROR)
+        cout << "Listen(): Error listening on socket: " << WSAGetLastError() << endl;
+    else
+        cout << "Listen() is OK! I'm waiting for new connections... " << endl;
+
+    // Accept incoming connections
+    SOCKET acceptSocket;
+    acceptSocket = accept(serverSocket, nullptr, nullptr);
+
+    // Check for successful connection
+    if (acceptSocket == INVALID_SOCKET)
+    {
+        cout << "Accept failed: " << WSAGetLastError() << endl;
+        WSACleanup();
+        return -1;
+    }
+    else
+        cout << "Accept() is OK!" << endl;
 }
