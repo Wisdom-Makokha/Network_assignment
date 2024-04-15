@@ -77,4 +77,30 @@ int main()
     }
     else
         cout << "Accept() is OK!" << endl;
+
+    //Receive data from the client
+    char receiveBuffer[200];
+    int receiveByteCount = recv(acceptSocket, receiveBuffer, 200, 0);
+    if(receiveByteCount < 0)
+    {
+        cout << "Server recv error: " << WSAGetLastError() << endl;
+        return 0;
+    }
+    else
+        cout << "Received data: " << receiveBuffer << endl;
+
+    //Send a response to the client
+    char buffer[200];
+    cout << "Enter the message: ";
+    cin.getline(buffer, 200);
+    int sendByteCount = send(acceptSocket, buffer, 200, 0);
+    if(sendByteCount == SOCKET_ERROR)
+    {
+        cout << "Server send error: " << WSAGetLastError() << endl;
+        return -1;
+    }
+    else
+        cout << "Server: Sent " << sendByteCount << " bytes" << endl;
+
+    return 0;
 }
